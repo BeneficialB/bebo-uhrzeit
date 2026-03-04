@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bebo Lernuhr">
+<title>Bebo Lernuhr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black:    #000000;
+    --yellow:   #ffe600;
+    --orange:   #ff8c00;
+    --magenta:  #ff006e;
+    --cyan:     #00e5ff;
+    --white:    #ffffff;
+    --font-d:   'Bebas Neue', sans-serif;
+    --font-ui:  'Barlow Condensed', sans-serif;
+  }
+
+  html, body {
+    height: 100%; width: 100%;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    color: var(--white);
+  }
+
+  /* ── Halftone dot background ── */
+  body {
+    background-color: var(--black);
+    background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1.5px, transparent 1.5px);
+    background-size: 18px 18px;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  /* ── Main layout ── */
+  .app {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    max-width: 1920px;
+  }
+
+  /* ══════════════════════════════
+     LEFT — CLOCK SECTION
+  ══════════════════════════════ */
+  .clock-section {
+    flex: 0 0 68%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 20px 16px 16px;
+    position: relative;
+  }
+
+  /* Triple-line divider: magenta | black gap | yellow */
+  .clock-section::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 7px;
+    background:
+      linear-gradient(to right,
+        var(--magenta) 0px, var(--magenta) 3px,
+        var(--black)   3px, var(--black)   5px,
+        var(--yellow)  5px, var(--yellow)  7px
+      );
+  }
+
+  /* ── LOGOTYPE ── */
+  .logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    user-select: none;
+    gap: 0;
+  }
+  .logo-main {
+    font-family: var(--font-d);
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    letter-spacing: 0.2em;
+    color: var(--yellow);
+    text-shadow: 3px 3px 0 #000, 6px 6px 0 rgba(255,0,110,0.35);
+    -webkit-text-stroke: 1.5px #000;
+  }
+  .logo-sub {
+    font-family: var(--font-d);
+    font-size: clamp(0.8rem, 2vw, 1.5rem);
+    letter-spacing: 0.45em;
+    color: var(--magenta);
+    text-shadow: 2px 2px 0 #000;
+    margin-top: -2px;
+  }
+
+  /* ── CLOCK WRAP — comic panel ── */
+  .clock-wrap {
+    position: relative;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Layered outline: yellow → black → magenta offset */
+    outline: 4px solid var(--yellow);
+    outline-offset: 5px;
+    box-shadow:
+      0 0 0 9px var(--black),
+      0 0 0 13px var(--magenta),
+      8px 8px 0 13px var(--black);
+  }
+  .clock-wrap:active { cursor: grabbing; }
+
+  #clockSvg {
+    width: clamp(460px, 82vh, 860px);
+    height: clamp(460px, 82vh, 860px);
+    display: block;
+  }
+
+  /* ── CONTROLS ── */
+  .clock-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* AM/PM — comic square pill */
+  .ampm-row {
+    display: flex;
+    align-items: center;
+    background: var(--black);
+    border: 3px solid var(--cyan);
+    border-radius: 3px;
+    padding: 3px;
+    box-shadow: 4px 4px 0 var(--cyan);
+  }
+  .ampm-btn {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    background: transparent;
+    color: rgba(0,229,255,0.35);
+    transition: background 0.12s, color 0.12s;
+  }
+  .ampm-btn.active {
+    background: var(--cyan);
+    color: var(--black);
+  }
+
+  /* Random button */
+  .btn-random {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    background: var(--magenta);
+    color: var(--white);
+    border: 3px solid var(--black);
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 4px 4px 0 var(--black);
+    transition: transform 0.07s, box-shadow 0.07s;
+  }
+  .btn-random:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--black); }
+  .btn-random:active { transform: translate(3px,3px);   box-shadow: 1px 1px 0 var(--black); }
+
+  /* ══════════════════════════════
+     RIGHT — PANEL
+  ══════════════════════════════ */
+  .panel-section {
+    flex: 1;
+    background: var(--black);
+    border-left: 7px solid transparent; /* actual border done by ::after on left side */
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* Each card gets a different left color accent — premium zoning */
+  .card {
+    flex: 1;
+    padding: 18px 24px 16px 20px;
+    border-bottom: 3px solid rgba(255,230,0,0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    /* Left accent stripe per card */
+  }
+  .card:last-child { border-bottom: none; }
+
+  /* Colored left-edge stripe per card */
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+  }
+  .card-digital::before  { background: var(--yellow); }
+  .card-official::before { background: var(--orange); }
+  .card-colloquial::before { background: var(--magenta); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .panel-label {
+    font-family: var(--font-d);
+    font-size: clamp(0.85rem, 1.1vw, 1.1rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .card-digital  .panel-label { color: var(--yellow);  }
+  .card-official .panel-label { color: var(--orange);  }
+  .card-colloquial .panel-label { color: var(--magenta); }
+
+  .digital-time {
+    font-family: var(--font-d);
+    font-size: clamp(2.8rem, 4.5vw, 5rem);
+    color: var(--yellow);
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-shadow: 3px 3px 0 rgba(255,0,110,0.4);
+    transition: opacity 0.25s;
+  }
+
+  .text-display {
+    font-family: var(--font-ui);
+    font-size: clamp(1.35rem, 2vw, 2rem);
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.35;
+    min-height: 1.8em;
+    transition: opacity 0.25s;
+    letter-spacing: 0.02em;
+  }
+
+  .hidden { opacity: 0 !important; pointer-events: none; }
+
+  /* Eye toggle */
+  .btn-eye {
+    background: var(--black);
+    border: 2.5px solid;
+    border-radius: 3px;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.07s, box-shadow 0.07s, color 0.12s;
+    flex-shrink: 0;
+  }
+  .card-digital   .btn-eye { border-color: var(--yellow);  color: rgba(255,230,0,0.35); box-shadow: 3px 3px 0 var(--yellow); }
+  .card-official  .btn-eye { border-color: var(--orange);  color: rgba(255,140,0,0.35); box-shadow: 3px 3px 0 var(--orange); }
+  .card-colloquial .btn-eye { border-color: var(--magenta); color: rgba(255,0,110,0.35); box-shadow: 3px 3px 0 var(--magenta); }
+
+  .btn-eye.active { color: inherit; }
+  .card-digital   .btn-eye.active { color: var(--yellow);  }
+  .card-official  .btn-eye.active { color: var(--orange);  }
+  .card-colloquial .btn-eye.active { color: var(--magenta); }
+
+  .btn-eye:hover  { transform: translate(-1px,-1px); }
+  .btn-eye:active { transform: translate(2px,2px); box-shadow: 1px 1px 0; }
+
+  /* Speak buttons — all in Cyan */
+  .btn-speak {
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    background: transparent;
+    border: 2.5px solid var(--cyan);
+    border-radius: 3px;
+    color: var(--cyan);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    box-shadow: 3px 3px 0 var(--cyan);
+    transition: transform 0.07s, box-shadow 0.07s, background 0.12s, color 0.12s;
+    align-self: flex-start;
+  }
+  .btn-speak:hover  { background: var(--cyan); color: var(--black); transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--cyan); }
+  .btn-speak:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--cyan); }
+  .btn-speak:disabled { opacity: 0.2; cursor: not-allowed; box-shadow: none; }
+  .btn-speak.speaking { background: var(--cyan); color: var(--black); }
+
+  /* PWA safe-area */
+  @supports (padding: env(safe-area-inset-left)) {
+    .app { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    body { padding-bottom: env(safe-area-inset-bottom); }
+  }
+
+  svg, .clock-wrap { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ LEFT: CLOCK ══ -->
+  <div class="clock-section">
+
+    <!-- Logotype -->
+    <div class="logo">
+      <div class="logo-main">BEBO</div>
+      <div class="logo-sub">LERNUHR</div>
+    </div>
+
+    <div class="clock-wrap" id="clockWrap">
+      <svg id="clockSvg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Face: black with colored rings -->
+        <circle cx="250" cy="250" r="238" fill="#000000"/>
+        <!-- Outer yellow ring -->
+        <circle cx="250" cy="250" r="238" fill="none" stroke="#ffe600" stroke-width="8"/>
+        <!-- Black gap -->
+        <circle cx="250" cy="250" r="228" fill="none" stroke="#000000" stroke-width="4"/>
+        <!-- Magenta inner ring -->
+        <circle cx="250" cy="250" r="224" fill="none" stroke="#ff006e" stroke-width="3" opacity="0.8"/>
+        <!-- Very subtle cyan hairline -->
+        <circle cx="250" cy="250" r="219" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.25"/>
+
+        <!-- Tick marks -->
+        <g id="tickMarks"></g>
+        <!-- Hour numbers -->
+        <g id="hourNumbers"></g>
+
+        <!-- Hour hand: orange with black shadow -->
+        <line id="hourHandShadow" x1="250" y1="250" x2="250" y2="148"
+          stroke="#000" stroke-width="18" stroke-linecap="round" opacity="0.65"/>
+        <line id="hourHand" x1="250" y1="250" x2="250" y2="148"
+          stroke="#ff8c00" stroke-width="12" stroke-linecap="round"/>
+
+        <!-- Minute hand: yellow with black shadow -->
+        <line id="minuteHandShadow" x1="250" y1="250" x2="250" y2="70"
+          stroke="#000" stroke-width="11" stroke-linecap="round" opacity="0.65"/>
+        <line id="minuteHand" x1="250" y1="250" x2="250" y2="70"
+          stroke="#ffe600" stroke-width="6" stroke-linecap="round"/>
+
+        <!-- Minute hand tail -->
+        <line id="minuteTail" x1="250" y1="250" x2="250" y2="278"
+          stroke="#ffe600" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+        <!-- Center: layered caps -->
+        <circle cx="250" cy="250" r="16" fill="#000" stroke="#ff006e" stroke-width="3"/>
+        <circle cx="250" cy="250" r="7"  fill="#00e5ff"/>
+
+      </svg>
+    </div>
+
+    <!-- Controls -->
+    <div class="clock-controls">
+      <div class="ampm-row">
+        <button class="ampm-btn active" id="btnAM" onclick="setAmPm('AM')">vormittags</button>
+        <button class="ampm-btn"        id="btnPM" onclick="setAmPm('PM')">nachmittags</button>
+      </div>
+
+      <button class="btn-random" onclick="randomTime()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+        Zufällige Uhrzeit
+      </button>
+    </div>
+
+  </div><!-- /clock-section -->
+
+  <!-- ══ RIGHT: PANEL ══ -->
+  <div class="panel-section">
+
+    <!-- Digital -->
+    <div class="card card-digital">
+      <div class="card-header">
+        <div>
+          <div class="panel-label">24-Stunden-Anzeige</div>
+          <div class="digital-time" id="digitalDisplay">09:15</div>
+        </div>
+        <button class="btn-eye active" id="eyeDigital"
+          onclick="toggleVis('digitalDisplay','eyeDigital')" title="Einblenden / Ausblenden">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Official -->
+    <div class="card card-official">
+      <div class="card-header">
+        <div class="panel-label">Offizielle Ausdrucksweise</div>
+        <button class="btn-eye active" id="eyeOfficial"
+          onclick="toggleVis('officialText','eyeOfficial')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="text-display" id="officialText">Neun Uhr fünfzehn.</div>
+      <button class="btn-speak" id="speakOfficial" onclick="speak('official')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        Offiziell vorlesen
+      </button>
+    </div>
+
+    <!-- Colloquial -->
+    <div class="card card-colloquial">
+      <div class="card-header">
+        <div class="panel-label">Umgangssprachlich</div>
+        <button class="btn-eye active" id="eyeColloquial"
+          onclick="toggleVis('colloquialText','eyeColloquial')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="text-display" id="colloquialText">Viertel nach neun.</div>
+      <button class="btn-speak" id="speakColloquial" onclick="speak('colloquial')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        Umgangssprachlich vorlesen
+      </button>
+    </div>
+
+  </div><!-- /panel-section -->
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const state = { hours: 9, minutes: 15, isAM: true };
+
+/* ═══════════════════════════════════════════
+   DRAW TICK MARKS
+   Q=yellow, H=orange, min=cyan tint
+═══════════════════════════════════════════ */
+(function drawTicks() {
+  const g = document.getElementById('tickMarks');
+  const cx = 250, cy = 250;
+  for (let i = 0; i < 60; i++) {
+    const isHour = i % 5  === 0;
+    const isQtr  = i % 15 === 0;
+    const outer  = 218;
+    const inner  = isQtr ? 190 : (isHour ? 199 : 212);
+    const w      = isQtr ? 7 : (isHour ? 5 : 1.8);
+    const color  = isQtr ? '#ffe600' : (isHour ? '#ff8c00' : 'rgba(0,229,255,0.28)');
+    const rad    = (i / 60 * 360 - 90) * Math.PI / 180;
+    const x1 = cx + inner * Math.cos(rad);
+    const y1 = cy + inner * Math.sin(rad);
+    const x2 = cx + outer * Math.cos(rad);
+    const y2 = cy + outer * Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', w);
+    line.setAttribute('stroke-linecap','square');
+    g.appendChild(line);
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   DRAW HOUR NUMBERS
+   Bebas Neue, alternating yellow / cyan
+═══════════════════════════════════════════ */
+(function drawNumbers() {
+  const g  = document.getElementById('hourNumbers');
+  const cx = 250, cy = 250, r = 175;
+  for (let h = 1; h <= 12; h++) {
+    const angle  = (h / 12 * 360 - 90) * Math.PI / 180;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const fill = '#ff006e';
+    const fs   = '40';
+
+    // Drop shadow
+    const sh = document.createElementNS('http://www.w3.org/2000/svg','text');
+    sh.setAttribute('x', x+2); sh.setAttribute('y', y+3);
+    sh.setAttribute('text-anchor','middle'); sh.setAttribute('dominant-baseline','central');
+    sh.setAttribute('font-family',"'Bebas Neue', sans-serif");
+    sh.setAttribute('font-size', fs); sh.setAttribute('fill','rgba(0,0,0,0.85)');
+    sh.textContent = h;
+    g.appendChild(sh);
+
+    // Main
+    const tx = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tx.setAttribute('x', x); tx.setAttribute('y', y);
+    tx.setAttribute('text-anchor','middle'); tx.setAttribute('dominant-baseline','central');
+    tx.setAttribute('font-family',"'Bebas Neue', sans-serif");
+    tx.setAttribute('font-size', fs); tx.setAttribute('fill', fill);
+    tx.textContent = h;
+    g.appendChild(tx);
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   RENDER HANDS
+═══════════════════════════════════════════ */
+function renderHands() {
+  const { hours, minutes } = state;
+  const cx = 250, cy = 250;
+
+  const minDeg = minutes / 60 * 360;
+  const minRad = (minDeg - 90) * Math.PI / 180;
+  const minLen = 170, tailLen = 30;
+
+  setLine('minuteHand',       cx, cy, cx + minLen  * Math.cos(minRad), cy + minLen  * Math.sin(minRad));
+  setLine('minuteHandShadow', cx, cy, cx + minLen  * Math.cos(minRad), cy + minLen  * Math.sin(minRad));
+  setLine('minuteTail',       cx, cy, cx - tailLen * Math.cos(minRad), cy - tailLen * Math.sin(minRad));
+
+  const hrDeg = (hours % 12) / 12 * 360 + minutes / 60 * 30;
+  const hrRad = (hrDeg - 90) * Math.PI / 180;
+  const hrLen = 118;
+  setLine('hourHand',       cx, cy, cx + hrLen * Math.cos(hrRad), cy + hrLen * Math.sin(hrRad));
+  setLine('hourHandShadow', cx, cy, cx + hrLen * Math.cos(hrRad), cy + hrLen * Math.sin(hrRad));
+
+  updateDisplays();
+}
+
+function setLine(id, x1, y1, x2, y2) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.setAttribute('x1',x1); el.setAttribute('y1',y1);
+  el.setAttribute('x2',x2); el.setAttribute('y2',y2);
+}
+
+/* ═══════════════════════════════════════════
+   AM / PM
+═══════════════════════════════════════════ */
+function setAmPm(val) {
+  state.isAM = (val === 'AM');
+  document.getElementById('btnAM').classList.toggle('active',  state.isAM);
+  document.getElementById('btnPM').classList.toggle('active', !state.isAM);
+  updateDisplays();
+}
+
+/* ═══════════════════════════════════════════
+   DISPLAYS
+═══════════════════════════════════════════ */
+function updateDisplays() {
+  const { hours, minutes, isAM } = state;
+  let h24 = hours % 12;
+  if (!isAM) h24 += 12;
+  document.getElementById('digitalDisplay').textContent =
+    String(h24).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
+  document.getElementById('officialText').textContent   = makeOfficial(h24, minutes);
+  document.getElementById('colloquialText').textContent = makeColloquial(hours % 12, minutes);
+}
+
+/* ═══════════════════════════════════════════
+   GERMAN NUMBER WORDS
+═══════════════════════════════════════════ */
+const hourWords = [
+  'null','ein','zwei','drei','vier','fünf','sechs',
+  'sieben','acht','neun','zehn','elf','zwölf',
+  'dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn',
+  'neunzehn','zwanzig','einundzwanzig','zweiundzwanzig','dreiundzwanzig'
+];
+const minWords = [
+  'null','eine','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn',
+  'elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn',
+  'neunzehn','zwanzig','einundzwanzig','zweiundzwanzig','dreiundzwanzig','vierundzwanzig',
+  'fünfundzwanzig','sechsundzwanzig','siebenundzwanzig','achtundzwanzig','neunundzwanzig',
+  'dreißig','einunddreißig','zweiunddreißig','dreiunddreißig','vierunddreißig',
+  'fünfunddreißig','sechsunddreißig','siebenunddreißig','achtunddreißig','neununddreißig',
+  'vierzig','einundvierzig','zweiundvierzig','dreiundvierzig','vierundvierzig',
+  'fünfundvierzig','sechsundvierzig','siebenundvierzig','achtundvierzig','neunundvierzig',
+  'fünfzig','einundfünfzig','zweiundfünfzig','dreiundfünfzig','vierundvierzig',
+  'fünfundfünfzig','sechsundfünfzig','siebenundfünfzig','achtundfünfzig','neunundfünfzig'
+];
+
+function makeOfficial(h24, min) {
+  if (h24 === 0  && min === 0) return 'Mitternacht.';
+  if (h24 === 12 && min === 0) return 'Zwölf Uhr mittags.';
+  const hWord = hourWords[h24];
+  if (min === 0) return `${h24 === 1 ? 'Ein' : hWord.charAt(0).toUpperCase() + hWord.slice(1)} Uhr.`;
+  return `${h24 === 1 ? 'Ein' : hWord.charAt(0).toUpperCase() + hWord.slice(1)} Uhr ${minWords[min]}.`;
+}
+
+const colHours = ['zwölf','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn','elf','zwölf'];
+const minNums  = ['','eine','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn',
+  'elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn','neunzehn','zwanzig'];
+
+function _cur(h12)  { return colHours[h12 === 0 ? 0 : h12]; }
+function _next(h12) { return colHours[((h12 + 1) % 12) || 12]; }
+
+function makeColloquial(h12, min) {
+  const cur = _cur(h12), next = _next(h12);
+  if (min === 0)  return h12 === 0 ? 'Mitternacht.' : `${cur} Uhr.`;
+  if (min <= 5)   return `kurz nach ${cur}.`;
+  if (min <= 14)  return `${minNums[min]} nach ${cur}.`;
+  if (min === 15) return `Viertel nach ${cur}.`;
+  if (min <= 20)  return `${minNums[min]} nach ${cur}.`;
+  if (min <= 24)  return `${minNums[30 - min]} vor halb ${next}.`;
+  if (min <= 29)  return `kurz vor halb ${next}.`;
+  if (min === 30) return `halb ${next}.`;
+  if (min <= 35)  return `kurz nach halb ${next}.`;
+  if (min <= 39)  return `${minNums[min - 30]} nach halb ${next}.`;
+  if (min === 40) return `zwanzig vor ${next}.`;
+  if (min <= 44)  return `${minNums[60 - min]} vor ${next}.`;
+  if (min === 45) return `Viertel vor ${next}.`;
+  if (min <= 54)  return `${minNums[60 - min]} vor ${next}.`;
+  return `kurz vor ${next}.`;
+}
+
+/* ═══════════════════════════════════════════
+   TOGGLE VISIBILITY
+═══════════════════════════════════════════ */
+const SVG_EYE_OPEN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const SVG_EYE_OFF  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function toggleVis(targetId, btnId) {
+  const el = document.getElementById(targetId);
+  const btn = document.getElementById(btnId);
+  const nowHidden = el.classList.toggle('hidden');
+  btn.classList.toggle('active', !nowHidden);
+  btn.innerHTML = nowHidden ? SVG_EYE_OFF : SVG_EYE_OPEN;
+}
+
+/* ═══════════════════════════════════════════
+   SPEECH
+═══════════════════════════════════════════ */
+const speechOK = 'speechSynthesis' in window;
+
+function getGermanVoice() {
+  const v = window.speechSynthesis.getVoices();
+  return v.find(x => x.lang === 'de-DE') || v.find(x => x.lang.startsWith('de')) || null;
+}
+
+function _doSpeak(text, btn) {
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'de-DE'; utt.rate = 0.9; utt.pitch = 1.0;
+  const voice = getGermanVoice();
+  if (voice) utt.voice = voice;
+  btn.classList.add('speaking');
+  utt.onend = utt.onerror = () => btn.classList.remove('speaking');
+  window.speechSynthesis.speak(utt);
+}
+
+function speak(mode) {
+  if (!speechOK) return;
+  const text  = document.getElementById(mode === 'official' ? 'officialText' : 'colloquialText').textContent;
+  const btn   = document.getElementById(mode === 'official' ? 'speakOfficial' : 'speakColloquial');
+  if (window.speechSynthesis.getVoices().length > 0) {
+    _doSpeak(text, btn);
+  } else {
+    window.speechSynthesis.addEventListener('voiceschanged', function onVC() {
+      window.speechSynthesis.removeEventListener('voiceschanged', onVC);
+      _doSpeak(text, btn);
+    }, { once: true });
+    setTimeout(() => { if (!btn.classList.contains('speaking')) _doSpeak(text, btn); }, 500);
+  }
+}
+
+if (!speechOK) {
+  document.getElementById('speakOfficial').disabled   = true;
+  document.getElementById('speakColloquial').disabled = true;
+}
+
+/* ═══════════════════════════════════════════
+   RANDOM TIME
+═══════════════════════════════════════════ */
+function randomTime() {
+  state.hours   = Math.floor(Math.random() * 12);
+  state.minutes = Math.floor(Math.random() * 60);
+  renderHands();
+}
+
+/* ═══════════════════════════════════════════
+   DRAG — mouse + touch (unverändert)
+═══════════════════════════════════════════ */
+let dragging = null;
+
+function svgCenter() {
+  const r = document.getElementById('clockSvg').getBoundingClientRect();
+  return { x: r.left + r.width/2, y: r.top + r.height/2 };
+}
+function clientXY(e) { const t = e.touches ? e.touches[0] : e; return { x: t.clientX, y: t.clientY }; }
+function angleFrom(e, ctr) {
+  const { x, y } = clientXY(e);
+  let a = Math.atan2(y - ctr.y, x - ctr.x) * 180 / Math.PI + 90;
+  return ((a % 360) + 360) % 360;
+}
+function angularDiff(a, b) { let d = Math.abs(a-b)%360; return d>180?360-d:d; }
+function curMinAngle() { return state.minutes/60*360; }
+function curHrAngle()  { return (state.hours%12)/12*360 + state.minutes/60*30; }
+
+function onDown(e) {
+  const ctr = svgCenter(), angle = angleFrom(e, ctr);
+  const dMin = angularDiff(angle, curMinAngle()), dHr = angularDiff(angle, curHrAngle());
+  if (Math.min(dMin,dHr) > 28) return;
+  dragging = dMin <= dHr ? 'minute' : 'hour';
+  e.preventDefault();
+}
+function onMove(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  const angle = angleFrom(e, svgCenter());
+  if (dragging === 'minute') {
+    state.minutes = Math.round(angle/6) % 60;
+    if (state.minutes < 0) state.minutes += 60;
+  } else {
+    state.hours = Math.round(angle/30) % 12;
+    if (state.hours < 0) state.hours += 12;
+  }
+  renderHands();
+}
+function onUp() { dragging = null; }
+
+const wrap = document.getElementById('clockWrap');
+wrap.addEventListener('mousedown',  onDown, { passive: false });
+wrap.addEventListener('touchstart', onDown, { passive: false });
+document.addEventListener('mousemove', onMove, { passive: false });
+document.addEventListener('touchmove', onMove, { passive: false });
+document.addEventListener('mouseup',  onUp);
+document.addEventListener('touchend', onUp);
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+renderHands();
+
+/* ═══════════════════════════════════════════
+   PWA: Service Worker
+═══════════════════════════════════════════ */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const swCode = `
+    const CACHE = 'bebo-lernuhr-v1';
+    const ASSETS = [self.location.href.replace(/\\/sw\\.js.*/, '') || '/'];
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ).then(() => self.clients.claim()));
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match(e.request))));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+}
+</script>
+</body>
+</html>
